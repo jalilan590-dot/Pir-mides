@@ -1,0 +1,1202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pirámides Numéricas - IES Serranía</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            color: #333;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        .logo {
+            max-height: 80px;
+            margin-right: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin: 0;
+            flex: 1;
+        }
+        .container {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-weight: bold;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        #difficulty, #operation-mode {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-right: 10px;
+        }
+        .pyramid-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        .pyramid {
+            display: inline-block;
+            background-color: white;
+            border-collapse: collapse;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .pyramid-row {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        .cell {
+            width: 60px;
+            height: 60px;
+            text-align: center;
+            font-size: 1.5em;
+            border: 2px solid #bdc3c7;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: white;
+            cursor: pointer;
+            position: relative;
+            user-select: none;
+            transition: all 0.2s ease;
+            border-radius: 5px;
+            margin: 0 5px;
+        }
+        .cell.selected {
+            background-color: #d6eaf8;
+            box-shadow: inset 0 0 0 3px #3498db;
+            transform: scale(1.05);
+            z-index: 10;
+        }
+        .fixed {
+            font-weight: bold;
+            color: #2c3e50;
+            background-color: #ecf0f1;
+        }
+        .error {
+            color: #e74c3c !important;
+            background-color: #fde0dc !important;
+            box-shadow: inset 0 0 0 2px #e74c3c !important;
+            animation: pulse-error 1s infinite;
+        }
+        
+        @keyframes pulse-error {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+            100% { transform: scale(1); }
+        }
+        
+        .completed {
+            background-color: #d4f7d4;
+        }
+        .message {
+            text-align: center;
+            font-size: 1.2em;
+            margin: 15px 0;
+            color: #27ae60;
+            min-height: 30px;
+        }
+        #timer {
+            text-align: center;
+            font-size: 1.4em;
+            margin: 15px 0;
+            font-family: monospace;
+            font-weight: bold;
+        }
+        .action-btn {
+            width: 100%;
+            padding: 12px 20px;
+            font-size: 1.1em;
+            margin: 10px 0;
+            border-radius: 8px;
+        }
+        #check {
+            background-color: #3498db;
+        }
+        #check:hover {
+            background-color: #2980b9;
+        }
+        #download {
+            background-color: #27ae60;
+        }
+        #download:hover {
+            background-color: #219653;
+        }
+        .number-input {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+            margin-bottom: 25px;
+            max-width: 300px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .number-btn {
+            width: 60px;
+            height: 60px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.8em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.1s, background-color 0.2s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin: 5px;
+            -webkit-tap-highlight-color: transparent; /* Eliminar efecto de tap en móviles */
+            touch-action: manipulation; /* Mejora el comportamiento táctil */
+        }
+        .number-btn:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+        }
+        .number-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            background-color: #2471a3;
+        }
+        .number-btn[data-num="delete"] {
+            background-color: #e74c3c;
+        }
+        .number-btn[data-num="delete"]:hover {
+            background-color: #c0392b;
+        }
+        
+        /* Panel de estadísticas */
+        .stats-panel {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            min-width: 300px;
+            flex-grow: 1;
+            max-width: 400px;
+        }
+        .verification-history {
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .verification-entry {
+            padding: 8px;
+            margin-bottom: 8px;
+            border-radius: 5px;
+            font-size: 0.95em;
+        }
+        .verification-correct {
+            background-color: rgba(46, 204, 113, 0.2);
+        }
+        .verification-incorrect {
+            background-color: rgba(231, 76, 60, 0.2);
+        }
+        #name-dialog {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .dialog-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+        #student-name {
+            width: 100%;
+            padding: 10px;
+            margin: 15px 0;
+            font-size: 1em;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        #start-button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1em;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #student-info h3,
+        .verification-history h3 {
+            margin-top: 0;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            color: #2c3e50;
+        }
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 0.9em;
+            color: #7f8c8d;
+        }
+        .mode-toggle {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            justify-content: center;
+        }
+        .mode-label {
+            font-weight: bold;
+            margin-right: 5px;
+        }
+        .operation-symbol {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #3498db;
+            margin: 0 5px;
+        }
+        .hint {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.2em;
+            color: #7f8c8d;
+        }
+        .pyramid-size-label {
+            font-weight: bold;
+            margin-right: 5px;
+        }
+        #pyramid-size {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-right: 10px;
+        }
+        .info-icon {
+            font-size: 1.2em;
+            color: #3498db;
+            cursor: pointer;
+            margin-left: 5px;
+        }
+        #help-dialog {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0,0,0,0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .help-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .close-btn {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        .help-example {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+        }
+        .help-example img {
+            max-width: 100%;
+            margin: 10px 0;
+        }
+        .delete-btn {
+            background-color: #e74c3c;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+       <img src="https://raw.githubusercontent.com/jalilan590-dot/sudoku6x6/refs/heads/main/serrania-logo-otro.png" class="logo">
+        <h1>Pirámides Numéricas - 3º ESO</h1>
+    </div>
+    
+    <div id="name-dialog">
+        <div class="dialog-content">
+            <img src="https://raw.githubusercontent.com/jalilan590-dot/sudoku6x6/refs/heads/main/serrania-logo-otro.png" alt="Logo IES Serranía" style="max-width: 150px; margin-bottom: 20px;">
+            <h2>Bienvenido a las Pirámides Numéricas</h2>
+            <p>Por favor, introduce tu nombre antes de comenzar:</p>
+            <input type="text" id="student-name" placeholder="Tu nombre...">
+            <button id="start-button">Comenzar</button>
+        </div>
+    </div>
+    
+    <div id="help-dialog">
+        <div class="help-content">
+            <h2>¿Cómo jugar a las Pirámides Numéricas?</h2>
+            
+            <p>Las pirámides numéricas son un juego matemático donde cada número es el resultado de operar con los dos números que están justo debajo de él.</p>
+            
+            <h3>Reglas del juego:</h3>
+            <ul>
+                <li><strong>Modo Suma</strong>: Cada número es la suma de los dos números directamente debajo.</li>
+                <li><strong>Modo Producto</strong>: Cada número es el producto (multiplicación) de los dos números directamente debajo.</li>
+            </ul>
+            
+            <div class="help-example">
+                <h4>Ejemplo (Modo Suma):</h4>
+                <pre>
+                      15
+                    7    8
+                  3   4   4   4
+                1  2  3  1  2  2
+                </pre>
+                <p>En este ejemplo: 3 + 4 = 7, 4 + 4 = 8, y 7 + 8 = 15</p>
+            </div>
+            
+            <div class="help-example">
+                <h4>Ejemplo (Modo Producto):</h4>
+                <pre>
+                      24
+                    4    6
+                  2   2   3   2
+                1  2  1  2  1  2
+                </pre>
+                <p>En este ejemplo: 2 × 2 = 4, 3 × 2 = 6, y 4 × 6 = 24</p>
+            </div>
+            
+            <h3>Cómo jugar:</h3>
+            <ol>
+                <li>Selecciona el tamaño de la pirámide (número de niveles).</li>
+                <li>Elige el modo de operación (Suma o Producto).</li>
+                <li>Selecciona la dificultad (Fácil, Medio, Difícil) que determina cuántos números estarán visibles.</li>
+                <li>Haz clic en una celda vacía y usa los botones de números para rellenarla.</li>
+                <li>Comprueba tu solución cuando hayas terminado.</li>
+            </ol>
+            
+            <h3>Consejos:</h3>
+            <ul>
+                <li>Comienza por los números más bajos de la pirámide y ve subiendo nivel por nivel.</li>
+                <li>Si te atascas, utiliza papel y lápiz para hacer cálculos.</li>
+                <li>En el modo producto, recuerda que cualquier número multiplicado por 0 es 0.</li>
+                <li>Presta atención a las celdas que ya están rellenas, te darán pistas importantes.</li>
+            </ul>
+            
+            <button class="close-btn" id="close-help">Cerrar</button>
+        </div>
+    </div>
+    
+    <div class="controls">
+        <div>
+            <span class="pyramid-size-label">Niveles:</span>
+            <select id="pyramid-size">
+                <option value="4">4 Niveles</option>
+                <option value="5" selected>5 Niveles</option>
+                <option value="6">6 Niveles</option>
+                <option value="7">7 Niveles</option>
+            </select>
+            
+            <span class="mode-label">Operación:</span>
+            <select id="operation-mode">
+                <option value="sum">Suma (+)</option>
+                <option value="product">Producto (×)</option>
+            </select>
+            
+            <span class="mode-label">Dificultad:</span>
+            <select id="difficulty">
+                <option value="easy">Fácil</option>
+                <option value="medium">Medio</option>
+                <option value="hard">Difícil</option>
+            </select>
+        </div>
+        <button id="generate">Generar nueva Pirámide</button>
+        <span class="info-icon" id="show-help">ℹ️</span>
+    </div>
+    
+    <div class="hint" id="operation-hint">
+        Recuerda: Cada casilla es la suma de las dos casillas inferiores
+    </div>
+    
+    <div class="container">
+        <div class="pyramid-container">
+            <div class="pyramid" id="pyramid-grid"></div>
+            
+            <div class="number-input" id="number-pad">
+                <!-- El teclado numérico se generará aquí -->
+            </div>
+        </div>
+        
+        <div class="stats-panel">
+            <div id="student-info">
+                <h3>Información del estudiante</h3>
+                <div id="student-name-display">Estudiante: <span id="name-value">No registrado</span></div>
+                <div id="timer">00:00</div>
+                <div class="message" id="message"></div>
+            </div>
+            
+            <div class="verification-history">
+                <h3>Historial de verificaciones</h3>
+                <div id="verification-list"></div>
+            </div>
+            
+            <button id="check" class="action-btn">Comprobar solución</button>
+            <button id="download" class="action-btn">Descargar imagen</button>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p>IES Serranía - Taller de matemáticas: Pirámides Numéricas - 2025</p>
+    </div>
+
+    <script>
+        // Variables globales
+        let pyramidGrid = [];
+        let solutionGrid = [];
+        let selectedCell = null;
+        let startTime = null;
+        let timerInterval = null;
+        let studentName = '';
+        let verificationHistory = [];
+        let currentSize = 5;
+        let currentMode = 'sum';
+        
+        // Niveles de dificultad (porcentaje de celdas ocultas)
+        const difficulties = {
+            easy: 0.3,    // Oculta el 30% de las celdas
+            medium: 0.5,  // Oculta el 50% de las celdas
+            hard: 0.7     // Oculta el 70% de las celdas
+        };
+
+        // Inicialización al cargar la página
+        window.onload = function() {
+            // Configurar eventos iniciales
+            document.getElementById('start-button').addEventListener('click', iniciarJuego);
+            document.getElementById('student-name').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    iniciarJuego();
+                }
+            });
+            document.getElementById('show-help').addEventListener('click', showHelp);
+            document.getElementById('close-help').addEventListener('click', hideHelp);
+            
+            // Crear teclado numérico
+            createNumpad();
+        };
+        
+        // Función para crear el teclado numérico
+        function createNumpad() {
+            const numpad = document.getElementById('number-pad');
+            numpad.innerHTML = '';
+            
+            // Crear los botones numéricos
+            for (let i = 0; i <= 9; i++) {
+                const button = document.createElement('button');
+                button.className = 'number-btn';
+                button.textContent = i;
+                button.onclick = function() {
+                    addDigit(i);
+                };
+                numpad.appendChild(button);
+            }
+            
+            // Crear el botón de borrar
+            const deleteButton = document.createElement('button');
+            deleteButton.className = 'number-btn delete-btn';
+            deleteButton.textContent = '⌫';
+            deleteButton.onclick = function() {
+                deleteDigit();
+            };
+            numpad.appendChild(deleteButton);
+        }
+        
+        // Funciones para manejar la entrada de dígitos y borrado
+        function addDigit(digit) {
+            if (!selectedCell) return;
+            if (selectedCell.classList.contains('fixed')) return;
+            
+            const row = parseInt(selectedCell.getAttribute('data-row'));
+            const col = parseInt(selectedCell.getAttribute('data-col'));
+            
+            // Obtener el texto actual y añadir el nuevo dígito
+            let currentText = selectedCell.textContent || '';
+            
+            // Limitar a 3 dígitos
+            if (currentText.length < 3) {
+                const newText = currentText + digit;
+                selectedCell.textContent = newText;
+                pyramidGrid[row][col] = parseInt(newText);
+            }
+            
+            // Quitar clase de error
+            selectedCell.classList.remove('error');
+        }
+        
+        function deleteDigit() {
+            if (!selectedCell) return;
+            if (selectedCell.classList.contains('fixed')) return;
+            
+            const row = parseInt(selectedCell.getAttribute('data-row'));
+            const col = parseInt(selectedCell.getAttribute('data-col'));
+            
+            // Obtener el texto actual
+            let currentText = selectedCell.textContent || '';
+            
+            // Si hay texto, borrar el último dígito
+            if (currentText.length > 0) {
+                const newText = currentText.substring(0, currentText.length - 1);
+                selectedCell.textContent = newText;
+                
+                // Actualizar la matriz
+                if (newText.length > 0) {
+                    pyramidGrid[row][col] = parseInt(newText);
+                } else {
+                    pyramidGrid[row][col] = null;
+                }
+            }
+            
+            // Quitar clase de error
+            selectedCell.classList.remove('error');
+        }
+        
+        function showHelp() {
+            document.getElementById('help-dialog').style.display = 'flex';
+        }
+        
+        function hideHelp() {
+            document.getElementById('help-dialog').style.display = 'none';
+        }
+        
+        // Función para iniciar el juego
+        function iniciarJuego() {
+            const nameInput = document.getElementById('student-name').value.trim();
+            if (nameInput) {
+                studentName = nameInput;
+                document.getElementById('name-value').textContent = studentName;
+                document.getElementById('name-dialog').style.display = 'none';
+                
+                // Configurar los eventos
+                setupEventListeners();
+                
+                // Generar la pirámide
+                generatePyramid();
+            } else {
+                alert('Por favor, introduce tu nombre para continuar.');
+            }
+        }
+        
+        // Configurar eventos para los elementos del juego
+        function setupEventListeners() {
+            // Botones de control
+            document.getElementById('generate').addEventListener('click', generatePyramid);
+            document.getElementById('check').addEventListener('click', checkSolution);
+            document.getElementById('download').addEventListener('click', downloadImage);
+            
+            // Regenerar pirámide cuando cambia la dificultad, operación o tamaño
+            document.getElementById('difficulty').addEventListener('change', generatePyramid);
+            document.getElementById('operation-mode').addEventListener('change', function() {
+                currentMode = this.value;
+                updateOperationHint();
+                generatePyramid();
+            });
+            document.getElementById('pyramid-size').addEventListener('change', function() {
+                currentSize = parseInt(this.value);
+                generatePyramid();
+            });
+            
+            // Capturar teclas numéricas y de borrado
+            document.addEventListener('keydown', function(e) {
+                if (e.key >= '0' && e.key <= '9') {
+                    addDigit(e.key);
+                    e.preventDefault();
+                } else if (e.key === 'Backspace') {
+                    deleteDigit();
+                    e.preventDefault();
+                } else if (e.key === 'Delete') {
+                    if (selectedCell && !selectedCell.classList.contains('fixed')) {
+                        const row = parseInt(selectedCell.getAttribute('data-row'));
+                        const col = parseInt(selectedCell.getAttribute('data-col'));
+                        selectedCell.textContent = '';
+                        pyramidGrid[row][col] = null;
+                        selectedCell.classList.remove('error');
+                    }
+                    e.preventDefault();
+                }
+            });
+        }
+        
+        // Actualizar el texto de ayuda según la operación
+        function updateOperationHint() {
+            const hint = document.getElementById('operation-hint');
+            if (currentMode === 'sum') {
+                hint.textContent = 'Recuerda: Cada casilla es la suma de las dos casillas inferiores';
+            } else {
+                hint.textContent = 'Recuerda: Cada casilla es el producto (multiplicación) de las dos casillas inferiores';
+            }
+        }
+        
+        // Generar una nueva pirámide
+        function generatePyramid() {
+            // Reiniciar el temporizador
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
+            startTime = new Date();
+            updateTimer();
+            timerInterval = setInterval(updateTimer, 1000);
+            
+            // Limpiar mensajes e historial
+            document.getElementById('message').textContent = '';
+            
+            // Actualizar el texto de ayuda
+            updateOperationHint();
+            
+            // Generar una nueva pirámide
+            createPyramid();
+            
+            // Ocultar algunas celdas según la dificultad
+            hideCells();
+            
+            // Renderizar la pirámide
+            renderPyramid();
+        }
+        
+        // Crear una nueva pirámide con la solución
+        function createPyramid() {
+            // Inicializar las estructuras
+            pyramidGrid = [];
+            solutionGrid = [];
+            
+            // Crear una pirámide vacía con el tamaño seleccionado
+            for (let i = 0; i < currentSize; i++) {
+                const fila = [];
+                for (let j = 0; j <= i; j++) {
+                    fila.push(null);
+                }
+                pyramidGrid.push(fila);
+                solutionGrid.push([...fila]);
+            }
+            
+            // Llenar la fila base con números aleatorios (1-9)
+            const baseRow = currentSize - 1;
+            for (let j = 0; j <= baseRow; j++) {
+                const randomNum = Math.floor(Math.random() * 9) + 1; // 1-9
+                solutionGrid[baseRow][j] = randomNum;
+            }
+            
+            // Calcular valores para el resto de la pirámide (de abajo hacia arriba)
+            for (let i = baseRow - 1; i >= 0; i--) {
+                for (let j = 0; j <= i; j++) {
+                    if (currentMode === 'sum') {
+                        // Suma de los dos valores de abajo
+                        solutionGrid[i][j] = solutionGrid[i+1][j] + solutionGrid[i+1][j+1];
+                    } else {
+                        // Producto de los dos valores de abajo
+                        solutionGrid[i][j] = solutionGrid[i+1][j] * solutionGrid[i+1][j+1];
+                    }
+                }
+            }
+            
+            // Copiar la solución a la grilla de juego (luego ocultaremos algunas celdas)
+            pyramidGrid = JSON.parse(JSON.stringify(solutionGrid));
+        }
+        
+        // Ocultar celdas según la dificultad
+        function hideCells() {
+            const difficulty = document.getElementById('difficulty').value;
+            const hidePercentage = difficulties[difficulty];
+            
+            // Contar el número total de celdas en la pirámide
+            let totalCells = 0;
+            for (let i = 0; i < currentSize; i++) {
+                totalCells += (i + 1);
+            }
+            
+            // Calcular cuántas celdas ocultar
+            const cellsToHide = Math.floor(totalCells * hidePercentage);
+            
+            // Crear una lista de todas las posiciones disponibles (excepto la cima)
+            const positions = [];
+            for (let i = 0; i < currentSize; i++) {
+                for (let j = 0; j <= i; j++) {
+                    // No incluir la cima para siempre mostrarla
+                    if (!(i === 0 && j === 0)) {
+                        positions.push([i, j]);
+                    }
+                }
+            }
+            
+            // Mezclar las posiciones
+            shuffleArray(positions);
+            
+            // Ocultar celdas
+            for (let i = 0; i < cellsToHide && i < positions.length; i++) {
+                const pos = positions[i];
+                const row = pos[0];
+                const col = pos[1];
+                pyramidGrid[row][col] = null;
+            }
+            
+            // Asegurarse de que la cima siempre esté visible (como ayuda)
+            pyramidGrid[0][0] = solutionGrid[0][0];
+        }
+        
+        // Renderizar la pirámide en la página
+        function renderPyramid() {
+            const grid = document.getElementById('pyramid-grid');
+            grid.innerHTML = '';
+            
+            // Crear cada nivel de la pirámide
+            for (let i = 0; i < currentSize; i++) {
+                const pyramidRow = document.createElement('div');
+                pyramidRow.classList.add('pyramid-row');
+                
+                for (let j = 0; j <= i; j++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('cell');
+                    cell.setAttribute('data-row', i);
+                    cell.setAttribute('data-col', j);
+                    
+                    // Mostrar el número si no es null
+                    if (pyramidGrid[i][j] !== null) {
+                        cell.textContent = pyramidGrid[i][j];
+                        cell.classList.add('fixed');
+                    }
+                    
+                    // Manejar clic en la celda
+                    cell.addEventListener('click', function() {
+                        // Quitar selección anterior
+                        if (selectedCell) {
+                            selectedCell.classList.remove('selected');
+                        }
+                        
+                        // Seleccionar esta celda
+                        this.classList.add('selected');
+                        selectedCell = this;
+                    });
+                    
+                    pyramidRow.appendChild(cell);
+                    
+                    // Añadir símbolo de operación entre celdas
+                    if (j < i) {
+                        const opSymbol = document.createElement('div');
+                        opSymbol.classList.add('operation-symbol');
+                        opSymbol.textContent = currentMode === 'sum' ? '+' : '×';
+                        pyramidRow.appendChild(opSymbol);
+                    }
+                }
+                
+                grid.appendChild(pyramidRow);
+            }
+            
+            // Seleccionar primera celda vacía
+            const firstEmptyCell = document.querySelector('div.cell:not(.fixed)');
+            if (firstEmptyCell) {
+                firstEmptyCell.click();
+            }
+        }
+        
+        // Comprobar si la solución es correcta
+        function checkSolution() {
+            const now = new Date();
+            const elapsedSeconds = Math.floor((now - startTime) / 1000);
+            const minutes = Math.floor(elapsedSeconds / 60);
+            const seconds = elapsedSeconds % 60;
+            const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            
+            let isComplete = true;
+            let isCorrect = true;
+            let errorCount = 0;
+            
+            // Comprobar todas las celdas
+            for (let i = 0; i < currentSize; i++) {
+                for (let j = 0; j <= i; j++) {
+                    // Verificar si está completa
+                    if (pyramidGrid[i][j] === null) {
+                        isComplete = false;
+                    }
+                    
+                    // Verificar si es correcta y contar errores
+                    if (pyramidGrid[i][j] !== null && pyramidGrid[i][j] !== solutionGrid[i][j]) {
+                        isCorrect = false;
+                        errorCount++;
+                        
+                        // Resaltar celda con error
+                        const cell = document.querySelector(`div.cell[data-row="${i}"][data-col="${j}"]`);
+                        if (cell) {
+                            cell.classList.add('error');
+                        }
+                    }
+                }
+            }
+            
+            // Mostrar mensaje
+            const message = document.getElementById('message');
+            
+            // Registrar la verificación
+            const verification = {
+                time: timeString,
+                timestamp: now,
+                isComplete: isComplete,
+                isCorrect: isCorrect,
+                errorCount: errorCount,
+                mode: currentMode === 'sum' ? 'Suma' : 'Producto',
+                size: currentSize
+            };
+            
+            verificationHistory.push(verification);
+            updateVerificationHistory();
+            
+            if (!isComplete) {
+                message.textContent = '¡Aún no has completado la pirámide!';
+                message.style.color = '#e67e22';
+            } else if (!isCorrect) {
+                message.textContent = `¡Hay ${errorCount} errores en tu solución!`;
+                message.style.color = '#e74c3c';
+            } else {
+                message.textContent = '¡Felicidades! Has resuelto la pirámide correctamente.';
+                message.style.color = '#27ae60';
+                clearInterval(timerInterval);
+                document.querySelectorAll('.cell').forEach(function(cell) {
+                    cell.classList.add('completed');
+                });
+            }
+        }
+        
+        // Actualizar el historial de verificaciones
+        function updateVerificationHistory() {
+            const list = document.getElementById('verification-list');
+            list.innerHTML = '';
+            
+            if (verificationHistory.length === 0) {
+                const emptyMessage = document.createElement('div');
+                emptyMessage.textContent = 'No hay verificaciones aún';
+                emptyMessage.style.color = '#7f8c8d';
+                emptyMessage.style.textAlign = 'center';
+                emptyMessage.style.padding = '10px';
+                list.appendChild(emptyMessage);
+                return;
+            }
+            
+            // Ordenar por tiempo más reciente primero
+            verificationHistory.sort(function(a, b) {
+                return b.timestamp - a.timestamp;
+            });
+            
+            for (let i = 0; i < verificationHistory.length; i++) {
+                const v = verificationHistory[i];
+                const entry = document.createElement('div');
+                entry.classList.add('verification-entry');
+                
+                if (v.isComplete && v.isCorrect) {
+                    entry.classList.add('verification-correct');
+                    entry.textContent = `${v.time} - ${v.mode} ${v.size}n - Correcto`;
+                } else if (v.isComplete) {
+                    entry.classList.add('verification-incorrect');
+                    entry.textContent = `${v.time} - ${v.mode} ${v.size}n - ${v.errorCount} errores`;
+                } else {
+                    entry.textContent = `${v.time} - ${v.mode} ${v.size}n - Incompleto`;
+                }
+                
+                list.appendChild(entry);
+            }
+        }
+        
+        // Actualizar el temporizador
+        function updateTimer() {
+            if (!startTime) return;
+            
+            const now = new Date();
+            const elapsed = Math.floor((now - startTime) / 1000);
+            const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+            const seconds = (elapsed % 60).toString().padStart(2, '0');
+            
+            document.getElementById('timer').textContent = `${minutes}:${seconds}`;
+        }
+        
+        // Función para descargar la imagen de la pirámide
+        function downloadImage() {
+            try {
+                // Crear un canvas temporal
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                
+                // Configurar el tamaño del canvas
+                const width = 600; 
+                const height = 700;
+                canvas.width = width;
+                canvas.height = height;
+                
+                // Dibujar fondo blanco
+                context.fillStyle = '#ffffff';
+                context.fillRect(0, 0, width, height);
+                
+                // Título
+                context.font = 'bold 18px Arial';
+                context.fillStyle = '#2c3e50';
+                context.textAlign = 'center';
+                context.fillText('IES Serranía - Pirámides Numéricas', width/2, 40);
+                context.textAlign = 'left';
+                
+                // Obtener la dificultad para el nombre del archivo
+                const difficulty = document.getElementById('difficulty').value;
+                let difficultyText = 'Desconocido';
+                if (difficulty === 'easy') difficultyText = 'Facil';
+                if (difficulty === 'medium') difficultyText = 'Medio';
+                if (difficulty === 'hard') difficultyText = 'Dificil';
+                
+                // Obtener el modo de operación
+                const opMode = currentMode === 'sum' ? 'Suma' : 'Producto';
+                
+                // Crear un enlace para descargar
+                const link = document.createElement('a');
+                
+                // Configurar el nombre del archivo
+                const cleanName = studentName.replace(/\s+/g, '_').replace(/[^\w]/g, '');
+                const dateStr = new Date().toISOString().slice(0,10);
+                link.download = `piramide_${opMode}_${currentSize}n_${cleanName}_${difficultyText}_${dateStr}.png`;
+                
+                // Dibujar información
+                const startY = 80;
+                context.fillStyle = '#2c3e50';
+                context.font = 'bold 16px Arial';
+                context.fillText(`Estudiante: ${studentName}`, 20, startY);
+                context.fillText(`Fecha: ${new Date().toLocaleDateString()}`, 20, startY + 25);
+                context.fillText(`Modo: ${opMode}`, 20, startY + 50);
+                context.fillText(`Niveles: ${currentSize}`, 20, startY + 75);
+                context.fillText(`Dificultad: ${difficultyText}`, 20, startY + 100);
+                
+                // Obtener y mostrar el tiempo
+                const now = new Date();
+                const totalElapsedSeconds = Math.floor((now - startTime) / 1000);
+                const totalMinutes = Math.floor(totalElapsedSeconds / 60);
+                const totalSeconds = totalElapsedSeconds % 60;
+                const totalTimeString = `${totalMinutes}:${totalSeconds.toString().padStart(2, '0')}`;
+                
+                context.fillText(`Tiempo total: ${totalTimeString}`, 20, startY + 125);
+                
+                // Dibujar la pirámide
+                const pyramidTop = startY + 160;
+                const cellSize = 50;
+                const operationSymbol = currentMode === 'sum' ? '+' : '×';
+                
+                for (let i = 0; i < currentSize; i++) {
+                    // Calcular el desplazamiento horizontal para centrar cada fila
+                    const offsetX = (width - (i+1)*cellSize - i*20) / 2;
+                    
+                    for (let j = 0; j <= i; j++) {
+                        // Calcular la posición de la celda
+                        const x = offsetX + j * (cellSize + 20);
+                        const y = pyramidTop + i * (cellSize + 10);
+                        
+                        // Dibujar fondo de la celda
+                        const cellElement = document.querySelector(`div.cell[data-row="${i}"][data-col="${j}"]`);
+                        
+                        if (cellElement && cellElement.classList.contains('fixed') && (i !== 0 || j !== 0)) {
+                            context.fillStyle = '#ecf0f1'; // Color fijo
+                        } else if (cellElement && cellElement.classList.contains('error')) {
+                            context.fillStyle = '#fde0dc'; // Color error
+                        } else if (cellElement && cellElement.classList.contains('completed')) {
+                            context.fillStyle = '#d4f7d4'; // Color completado
+                        } else {
+                            context.fillStyle = '#ffffff'; // Color normal
+                        }
+                        
+                        // Dibujar celda
+                        context.fillRect(x, y, cellSize, cellSize);
+                        context.strokeStyle = '#bdc3c7';
+                        context.lineWidth = 2;
+                        context.strokeRect(x, y, cellSize, cellSize);
+                        
+                        // Dibujar borde para celdas con error
+                        if (cellElement && cellElement.classList.contains('error')) {
+                            context.strokeStyle = '#e74c3c';
+                            context.strokeRect(x, y, cellSize, cellSize);
+                        }
+                        
+                        // Dibujar número
+                        if (pyramidGrid[i][j] !== null) {
+                            context.font = 'bold 18px Arial';
+                            
+                            if (cellElement && cellElement.classList.contains('error')) {
+                                context.fillStyle = '#e74c3c'; // Color texto error
+                            } else if (i === 0 && j === 0) {
+                                context.fillStyle = '#2c3e50'; // Color texto cima
+                            } else if (cellElement && cellElement.classList.contains('fixed')) {
+                                context.fillStyle = '#2c3e50'; // Color texto fijo
+                            } else {
+                                context.fillStyle = '#333333'; // Color texto normal
+                            }
+                            
+                            context.textAlign = 'center';
+                            context.textBaseline = 'middle';
+                            context.fillText(pyramidGrid[i][j], x + cellSize/2, y + cellSize/2);
+                        }
+                        
+                        // Dibujar símbolos de operación
+                        if (j < i) {
+                            context.fillStyle = '#3498db';
+                            context.font = 'bold 18px Arial';
+                            context.fillText(operationSymbol, x + cellSize + 10, y + cellSize/2);
+                        }
+                    }
+                }
+                
+                // Añadir información de la solución
+                let isComplete = true;
+                for (let i = 0; i < currentSize; i++) {
+                    for (let j = 0; j <= i; j++) {
+                        if (pyramidGrid[i][j] === null) {
+                            isComplete = false;
+                            break;
+                        }
+                    }
+                    if (!isComplete) break;
+                }
+                
+                const resultY = pyramidTop + currentSize * (cellSize + 10) + 30;
+                
+                if (isComplete) {
+                    // Verificar si es correcto
+                    let isCorrect = true;
+                    let errorCount = 0;
+                    for (let i = 0; i < currentSize; i++) {
+                        for (let j = 0; j <= i; j++) {
+                            if (pyramidGrid[i][j] !== solutionGrid[i][j]) {
+                                isCorrect = false;
+                                errorCount++;
+                            }
+                        }
+                    }
+                    
+                    if (isCorrect) {
+                        context.fillStyle = '#27ae60';
+                        context.font = '16px Arial';
+                        context.textAlign = 'center';
+                        context.fillText('¡Solución correcta!', width/2, resultY);
+                    } else {
+                        context.fillStyle = '#e74c3c';
+                        context.font = '16px Arial';
+                        context.textAlign = 'center';
+                        context.fillText(`Solución con ${errorCount} errores`, width/2, resultY);
+                    }
+                } else {
+                    context.fillStyle = '#7f8c8d';
+                    context.font = '16px Arial';
+                    context.textAlign = 'center';
+                    context.fillText('Solución incompleta', width/2, resultY);
+                }
+                
+                // Dibujar el historial de verificaciones
+                context.font = 'bold 16px Arial';
+                context.fillStyle = '#2c3e50';
+                context.textAlign = 'left';
+                context.fillText('Historial de verificaciones:', 20, resultY + 40);
+                
+                // Ordenar las verificaciones (las más antiguas primero)
+                const sortedVerifications = [...verificationHistory].sort(function(a, b) {
+                    return a.timestamp - b.timestamp;
+                });
+                
+                // Mostrar hasta 6 verificaciones
+                const maxEntries = Math.min(sortedVerifications.length, 6);
+                
+                if (sortedVerifications.length === 0) {
+                    context.font = '14px Arial';
+                    context.fillStyle = '#7f8c8d';
+                    context.fillText('No hay verificaciones registradas', 20, resultY + 70);
+                } else {
+                    context.font = '14px Arial';
+                    
+                    for (let i = 0; i < maxEntries; i++) {
+                        const v = sortedVerifications[i];
+                        let entryText = '';
+                        
+                        if (v.isComplete && v.isCorrect) {
+                            context.fillStyle = '#27ae60';  // verde
+                            entryText = `${i+1}. ${v.time} - ${v.mode} ${v.size}n - Solución correcta`;
+                        } else if (v.isComplete) {
+                            context.fillStyle = '#e74c3c';  // rojo
+                            entryText = `${i+1}. ${v.time} - ${v.mode} ${v.size}n - ${v.errorCount} errores`;
+                        } else {
+                            context.fillStyle = '#7f8c8d';  // gris
+                            entryText = `${i+1}. ${v.time} - ${v.mode} ${v.size}n - Incompleto`;
+                        }
+                        
+                        context.fillText(entryText, 20, resultY + 70 + (i * 25));
+                    }
+                }
+                
+                // Generar la imagen y descargarla
+                link.href = canvas.toDataURL('image/png');
+                document.body.appendChild(link);
+                link.click();
+                
+                // Eliminar el enlace después de descargar
+                setTimeout(function() {
+                    document.body.removeChild(link);
+                }, 100);
+                
+            } catch (error) {
+                console.error("Error al generar/descargar la imagen:", error);
+                alert("Hubo un error al descargar la imagen. Por favor, inténtalo de nuevo.");
+            }
+        }
+        
+        // Función auxiliar para mezclar un array
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+    </script>
+</body>
+</html>
