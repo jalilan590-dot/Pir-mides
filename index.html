@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pirámides Numéricas - IES Serranía</title>
+    <title>Pirámides Numéricas Optimizadas - IES Serranía</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -78,11 +78,12 @@
             justify-content: center;
             margin-bottom: 10px;
         }
+        /* Celda modificada para permitir números de cualquier tamaño */
         .cell {
-            width: 60px;
+            min-width: 60px; /* Ancho mínimo para números pequeños */
             height: 60px;
             text-align: center;
-            font-size: 1.5em;
+            font-size: 1.2em;
             border: 2px solid #bdc3c7;
             display: flex;
             align-items: center;
@@ -94,6 +95,7 @@
             transition: all 0.2s ease;
             border-radius: 5px;
             margin: 0 5px;
+            padding: 0 5px; /* Espacio horizontal para números grandes */
         }
         .cell.selected {
             background-color: #d6eaf8;
@@ -192,11 +194,11 @@
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             background-color: #2471a3;
         }
-        .number-btn[data-num="delete"] {
-            background-color: #e74c3c;
-        }
-        .number-btn[data-num="delete"]:hover {
-            background-color: #c0392b;
+        .operation-symbol {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #3498db;
+            margin: 0 5px;
         }
         
         /* Panel de estadísticas */
@@ -279,22 +281,6 @@
             font-size: 0.9em;
             color: #7f8c8d;
         }
-        .mode-toggle {
-            display: flex;
-            gap: 10px;
-            margin: 20px 0;
-            justify-content: center;
-        }
-        .mode-label {
-            font-weight: bold;
-            margin-right: 5px;
-        }
-        .operation-symbol {
-            font-size: 1.2em;
-            font-weight: bold;
-            color: #3498db;
-            margin: 0 5px;
-        }
         .hint {
             text-align: center;
             margin-bottom: 20px;
@@ -360,12 +346,80 @@
         .delete-btn {
             background-color: #e74c3c;
         }
+        /* Estilo específico para la celda seleccionada activa */
+        .cell.selected input {
+            border: none;
+            outline: none;
+            width: 100%;
+            background: transparent;
+            font-size: inherit;
+            color: inherit;
+            text-align: center;
+        }
+        /* Estilo para números negativos */
+        .negative {
+            color: #e74c3c;
+        }
+        
+        /* Niveles de dificultad */
+        .difficulty-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: bold;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+        .difficulty-easy {
+            background-color: #a8f0c6;
+            color: #27ae60;
+        }
+        .difficulty-medium {
+            background-color: #fdeab5;
+            color: #f39c12;
+        }
+        .difficulty-hard {
+            background-color: #f5c9c9;
+            color: #c0392b;
+        }
+        
+        /* Overlay de carga */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            display: none;
+        }
+        
+        .spinner {
+            border: 6px solid #f3f3f3;
+            border-top: 6px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
     <div class="header">
-       <img src="https://raw.githubusercontent.com/jalilan590-dot/sudoku6x6/refs/heads/main/serrania-logo-otro.png" class="logo">
-        <h1>Pirámides Numéricas - 3º ESO</h1>
+        <img src="https://raw.githubusercontent.com/jalilan590-dot/sudoku6x6/refs/heads/main/serrania-logo-otro.png" class="logo">
+        <h1>Pirámides Numéricas Optimizadas - 3º ESO</h1>
     </div>
     
     <div id="name-dialog">
@@ -376,6 +430,12 @@
             <input type="text" id="student-name" placeholder="Tu nombre...">
             <button id="start-button">Comenzar</button>
         </div>
+    </div>
+    
+    <!-- Overlay de carga -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="spinner"></div>
+        <p>Generando pirámide...</p>
     </div>
     
     <div id="help-dialog">
@@ -425,8 +485,17 @@
             <ul>
                 <li>Comienza por los números más bajos de la pirámide y ve subiendo nivel por nivel.</li>
                 <li>Si te atascas, utiliza papel y lápiz para hacer cálculos.</li>
-                <li>En el modo producto, recuerda que cualquier número multiplicado por 0 es 0.</li>
+                <li>Puedes usar la tecla '-' o el botón +/- para introducir números negativos en el modo suma.</li>
                 <li>Presta atención a las celdas que ya están rellenas, te darán pistas importantes.</li>
+                <li>En el nivel difícil, los rangos de números son más amplios y pueden aparecer números negativos.</li>
+                <li>En el modo producto, los números pueden crecer muy rápido. Utiliza la multiplicación de forma estratégica.</li>
+            </ul>
+            
+            <h3>Niveles de dificultad:</h3>
+            <ul>
+                <li><span class="difficulty-badge difficulty-easy">Fácil</span> - Valores más pequeños y más celdas visibles.</li>
+                <li><span class="difficulty-badge difficulty-medium">Medio</span> - Mayor rango de valores y menos celdas visibles.</li>
+                <li><span class="difficulty-badge difficulty-hard">Difícil</span> - Valores más grandes, posibilidad de números negativos y muy pocas celdas visibles.</li>
             </ul>
             
             <button class="close-btn" id="close-help">Cerrar</button>
@@ -443,13 +512,13 @@
                 <option value="7">7 Niveles</option>
             </select>
             
-            <span class="mode-label">Operación:</span>
+            <span class="pyramid-size-label">Operación:</span>
             <select id="operation-mode">
                 <option value="sum">Suma (+)</option>
                 <option value="product">Producto (×)</option>
             </select>
             
-            <span class="mode-label">Dificultad:</span>
+            <span class="pyramid-size-label">Dificultad:</span>
             <select id="difficulty">
                 <option value="easy">Fácil</option>
                 <option value="medium">Medio</option>
@@ -469,7 +538,17 @@
             <div class="pyramid" id="pyramid-grid"></div>
             
             <div class="number-input" id="number-pad">
-                <!-- El teclado numérico se generará aquí -->
+                <button class="number-btn" onclick="appendDigit('1')">1</button>
+                <button class="number-btn" onclick="appendDigit('2')">2</button>
+                <button class="number-btn" onclick="appendDigit('3')">3</button>
+                <button class="number-btn" onclick="appendDigit('4')">4</button>
+                <button class="number-btn" onclick="appendDigit('5')">5</button>
+                <button class="number-btn" onclick="appendDigit('6')">6</button>
+                <button class="number-btn" onclick="appendDigit('7')">7</button>
+                <button class="number-btn" onclick="appendDigit('8')">8</button>
+                <button class="number-btn" onclick="appendDigit('9')">9</button>
+                <button class="number-btn" onclick="appendDigit('0')">0</button>
+                <button class="number-btn delete-btn" onclick="deleteLastDigit()">⌫</button>
             </div>
         </div>
         
@@ -506,14 +585,9 @@
         let verificationHistory = [];
         let currentSize = 5;
         let currentMode = 'sum';
+        let allowNegatives = false; // Controla si se permiten números negativos
+        let debugMode = false; // Para mostrar mensajes de consola de depuración
         
-        // Niveles de dificultad (porcentaje de celdas ocultas)
-        const difficulties = {
-            easy: 0.3,    // Oculta el 30% de las celdas
-            medium: 0.5,  // Oculta el 50% de las celdas
-            hard: 0.7     // Oculta el 70% de las celdas
-        };
-
         // Inicialización al cargar la página
         window.onload = function() {
             // Configurar eventos iniciales
@@ -526,78 +600,114 @@
             document.getElementById('show-help').addEventListener('click', showHelp);
             document.getElementById('close-help').addEventListener('click', hideHelp);
             
-            // Crear teclado numérico
-            createNumpad();
+            // Añadir el botón para números negativos en modo suma
+            const numberPad = document.getElementById('number-pad');
+            const negativeButton = document.createElement('button');
+            negativeButton.classList.add('number-btn');
+            negativeButton.textContent = '+/-';
+            negativeButton.id = 'negative-btn';
+            negativeButton.onclick = toggleNegative;
+            negativeButton.style.display = 'none'; // Oculto por defecto
+            numberPad.appendChild(negativeButton);
+            
+            // Comprobar modo de operación para mostrar/ocultar botón negativo
+            document.getElementById('operation-mode').addEventListener('change', function() {
+                const negativeBtn = document.getElementById('negative-btn');
+                if (this.value === 'sum') {
+                    negativeBtn.style.display = 'block';
+                } else {
+                    negativeBtn.style.display = 'none';
+                }
+            });
         };
         
-        // Función para crear el teclado numérico
-        function createNumpad() {
-            const numpad = document.getElementById('number-pad');
-            numpad.innerHTML = '';
-            
-            // Crear los botones numéricos
-            for (let i = 0; i <= 9; i++) {
-                const button = document.createElement('button');
-                button.className = 'number-btn';
-                button.textContent = i;
-                button.onclick = function() {
-                    addDigit(i);
-                };
-                numpad.appendChild(button);
-            }
-            
-            // Crear el botón de borrar
-            const deleteButton = document.createElement('button');
-            deleteButton.className = 'number-btn delete-btn';
-            deleteButton.textContent = '⌫';
-            deleteButton.onclick = function() {
-                deleteDigit();
-            };
-            numpad.appendChild(deleteButton);
-        }
-        
-        // Funciones para manejar la entrada de dígitos y borrado
-        function addDigit(digit) {
-            if (!selectedCell) return;
-            if (selectedCell.classList.contains('fixed')) return;
+        // Función para cambiar el signo del número
+        function toggleNegative() {
+            if (!selectedCell || selectedCell.classList.contains('fixed')) return;
             
             const row = parseInt(selectedCell.getAttribute('data-row'));
             const col = parseInt(selectedCell.getAttribute('data-col'));
             
-            // Obtener el texto actual y añadir el nuevo dígito
+            // Obtener texto actual
             let currentText = selectedCell.textContent || '';
             
-            // Limitar a 3 dígitos
-            if (currentText.length < 3) {
-                const newText = currentText + digit;
-                selectedCell.textContent = newText;
-                pyramidGrid[row][col] = parseInt(newText);
+            // Si está vacío, no hacer nada
+            if (currentText === '') return;
+            
+            // Cambiar el signo
+            if (currentText.startsWith('-')) {
+                currentText = currentText.substring(1);
+                selectedCell.classList.remove('negative');
+            } else {
+                currentText = '-' + currentText;
+                selectedCell.classList.add('negative');
             }
+            
+            // Actualizar celda y matriz
+            selectedCell.textContent = currentText;
+            pyramidGrid[row][col] = parseInt(currentText);
             
             // Quitar clase de error
             selectedCell.classList.remove('error');
         }
         
-        function deleteDigit() {
-            if (!selectedCell) return;
-            if (selectedCell.classList.contains('fixed')) return;
+        // Función para añadir dígito a la celda seleccionada
+        function appendDigit(digit) {
+            if (!selectedCell || selectedCell.classList.contains('fixed')) return;
             
             const row = parseInt(selectedCell.getAttribute('data-row'));
             const col = parseInt(selectedCell.getAttribute('data-col'));
             
-            // Obtener el texto actual
+            // Obtener texto actual y comprobar si es negativo
             let currentText = selectedCell.textContent || '';
+            const isNegative = currentText.startsWith('-');
             
-            // Si hay texto, borrar el último dígito
+            // Si es negativo, mantener el signo al añadir dígitos
+            if (isNegative) {
+                currentText = currentText.substring(1); // Quitar el signo para añadir dígito
+            }
+            
+            // Añadir dígito
+            const newText = currentText + digit;
+            
+            // Volver a añadir el signo si era negativo
+            const finalText = isNegative ? '-' + newText : newText;
+            
+            // Actualizar la celda y la matriz
+            selectedCell.textContent = finalText;
+            pyramidGrid[row][col] = parseInt(finalText);
+            
+            // Quitar clase de error
+            selectedCell.classList.remove('error');
+        }
+        
+        // Función para borrar el último dígito
+        function deleteLastDigit() {
+            if (!selectedCell || selectedCell.classList.contains('fixed')) return;
+            
+            const row = parseInt(selectedCell.getAttribute('data-row'));
+            const col = parseInt(selectedCell.getAttribute('data-col'));
+            
+            let currentText = selectedCell.textContent || '';
+            const isNegative = currentText.startsWith('-');
+            
             if (currentText.length > 0) {
-                const newText = currentText.substring(0, currentText.length - 1);
-                selectedCell.textContent = newText;
-                
-                // Actualizar la matriz
-                if (newText.length > 0) {
-                    pyramidGrid[row][col] = parseInt(newText);
-                } else {
+                // Si solo queda el signo negativo o un solo dígito, borrarlo completamente
+                if (currentText.length === 1 || (isNegative && currentText.length === 2)) {
+                    selectedCell.textContent = '';
                     pyramidGrid[row][col] = null;
+                    selectedCell.classList.remove('negative');
+                } else {
+                    // De lo contrario, borrar el último dígito manteniendo el signo si existe
+                    if (isNegative) {
+                        const newText = '-' + currentText.substring(1, currentText.length - 1);
+                        selectedCell.textContent = newText;
+                        pyramidGrid[row][col] = parseInt(newText);
+                    } else {
+                        const newText = currentText.substring(0, currentText.length - 1);
+                        selectedCell.textContent = newText;
+                        pyramidGrid[row][col] = parseInt(newText);
+                    }
                 }
             }
             
@@ -643,6 +753,15 @@
             document.getElementById('operation-mode').addEventListener('change', function() {
                 currentMode = this.value;
                 updateOperationHint();
+                
+                // Mostrar u ocultar el botón de números negativos
+                const negativeBtn = document.getElementById('negative-btn');
+                if (currentMode === 'sum') {
+                    negativeBtn.style.display = 'block';
+                } else {
+                    negativeBtn.style.display = 'none';
+                }
+                
                 generatePyramid();
             });
             document.getElementById('pyramid-size').addEventListener('change', function() {
@@ -653,10 +772,10 @@
             // Capturar teclas numéricas y de borrado
             document.addEventListener('keydown', function(e) {
                 if (e.key >= '0' && e.key <= '9') {
-                    addDigit(e.key);
+                    appendDigit(e.key);
                     e.preventDefault();
                 } else if (e.key === 'Backspace') {
-                    deleteDigit();
+                    deleteLastDigit();
                     e.preventDefault();
                 } else if (e.key === 'Delete') {
                     if (selectedCell && !selectedCell.classList.contains('fixed')) {
@@ -665,7 +784,11 @@
                         selectedCell.textContent = '';
                         pyramidGrid[row][col] = null;
                         selectedCell.classList.remove('error');
+                        selectedCell.classList.remove('negative');
                     }
+                    e.preventDefault();
+                } else if (e.key === '-' && currentMode === 'sum') {
+                    toggleNegative();
                     e.preventDefault();
                 }
             });
@@ -674,15 +797,70 @@
         // Actualizar el texto de ayuda según la operación
         function updateOperationHint() {
             const hint = document.getElementById('operation-hint');
+            const difficulty = document.getElementById('difficulty').value;
+            
             if (currentMode === 'sum') {
-                hint.textContent = 'Recuerda: Cada casilla es la suma de las dos casillas inferiores';
+                let hintText = 'Recuerda: Cada casilla es la suma de las dos casillas inferiores';
+                if (difficulty === 'hard') {
+                    hintText += ' (¡pueden aparecer números negativos!)';
+                }
+                hint.textContent = hintText;
             } else {
                 hint.textContent = 'Recuerda: Cada casilla es el producto (multiplicación) de las dos casillas inferiores';
             }
         }
         
-        // Generar una nueva pirámide
+        // Obtener límite máximo para valores basado en tamaño y dificultad
+        function getMaxValueLimit() {
+            const difficulty = document.getElementById('difficulty').value;
+            const mode = document.getElementById('operation-mode').value;
+            
+            // Aumentar los límites para reducir fallos de generación
+            if (mode === 'sum') {
+                // Para pirámides de suma
+                switch(difficulty) {
+                    case 'easy':
+                        return currentSize <= 5 ? 150 : 250;
+                    case 'medium':
+                        return currentSize <= 5 ? 250 : 400;
+                    case 'hard':
+                        return currentSize <= 5 ? 400 : 600;
+                    default:
+                        return 300;
+                }
+            } else { // mode === 'product'
+                // Para pirámides de producto - límites más altos para permitir mayor variedad
+                switch(difficulty) {
+                    case 'easy':
+                        return currentSize <= 5 ? 200 : 400;
+                    case 'medium':
+                        return currentSize <= 5 ? 500 : 800;
+                    case 'hard':
+                        return currentSize <= 5 ? 800 : 1500;
+                    default:
+                        return 600;
+                }
+            }
+        }
+        
+        // Generar una nueva pirámide con manejo de carga
         function generatePyramid() {
+            // Mostrar overlay de carga
+            document.getElementById('loading-overlay').style.display = 'flex';
+            
+            // Usar setTimeout para permitir que la interfaz se actualice
+            setTimeout(function() {
+                try {
+                    generatePyramidAsync();
+                } finally {
+                    // Ocultar overlay cuando termine
+                    document.getElementById('loading-overlay').style.display = 'none';
+                }
+            }, 50);
+        }
+        
+        // Generación asíncrona de la pirámide
+        function generatePyramidAsync() {
             // Reiniciar el temporizador
             if (timerInterval) {
                 clearInterval(timerInterval);
@@ -697,94 +875,653 @@
             // Actualizar el texto de ayuda
             updateOperationHint();
             
-            // Generar una nueva pirámide
-            createPyramid();
+            // Crear pirámide según el modo
+            let success = false;
+            let attempts = 0;
+            const maxAttempts = 15; // Aumentado el límite de intentos
             
-            // Ocultar algunas celdas según la dificultad
+            while (!success && attempts < maxAttempts) {
+                try {
+                    if (currentMode === 'sum') {
+                        success = createSumPyramid();
+                    } else {
+                        success = createProductPyramid();
+                    }
+                } catch (error) {
+                    if (debugMode) {
+                        console.warn("Error al crear la pirámide, reintentando...", error);
+                    }
+                }
+                attempts++;
+            }
+            
+            if (!success) {
+                // Si después de varios intentos no se puede crear una pirámide válida,
+                // crear una más simple como respaldo
+                if (debugMode) {
+                    console.warn("Creando pirámide de respaldo después de " + attempts + " intentos");
+                }
+                
+                // Usar el nuevo método mejorado de respaldo
+                if (currentMode === 'sum') {
+                    createSimpleSumPyramid();
+                } else {
+                    createSimpleProductPyramid();
+                }
+            }
+            
+            // Copiar la solución a la grilla de juego
+            pyramidGrid = JSON.parse(JSON.stringify(solutionGrid));
+            
+            // Ocultar celdas según dificultad
             hideCells();
             
             // Renderizar la pirámide
             renderPyramid();
         }
         
-        // Crear una nueva pirámide con la solución
-        function createPyramid() {
-            // Inicializar las estructuras
-            pyramidGrid = [];
-            solutionGrid = [];
+        // Array de números primos para usar en la generación
+        const primeNumbers = [2, 3, 5, 7, 11, 13];
+        
+        // FUNCIÓN MEJORADA: Obtener número aleatorio diverso
+        function getRandomDiverseNumber(min, max, preferPrimes = false) {
+            // Valores para diferentes estrategias de generación
+            const strategy = Math.random();
             
-            // Crear una pirámide vacía con el tamaño seleccionado
+            // Estrategia 1: Valores normales dentro del rango (70% de probabilidad)
+            if (strategy < 0.7) {
+                return Math.floor(Math.random() * (max - min + 1)) + min;
+            }
+            // Estrategia 2: Valores primos (si se solicitan) o multiplicación de primos (15% probabilidad)
+            else if (strategy < 0.85 && preferPrimes) {
+                // Decidir si usar un número primo directamente o una combinación
+                if (Math.random() < 0.6 && max >= 11) {
+                    // Usar un número primo directamente
+                    const availablePrimes = primeNumbers.filter(p => p >= min && p <= max);
+                    if (availablePrimes.length > 0) {
+                        return availablePrimes[Math.floor(Math.random() * availablePrimes.length)];
+                    }
+                } else {
+                    // Generar un producto de dos números pequeños
+                    const factor1 = primeNumbers[Math.floor(Math.random() * 3)]; // 2, 3 o 5
+                    const factor2 = Math.floor(Math.random() * 4) + 1; // 1-4
+                    const result = factor1 * factor2;
+                    if (result >= min && result <= max) {
+                        return result;
+                    }
+                }
+            }
+            // Estrategia 3: Valores especiales fuera del rango común (15% probabilidad)
+            else {
+                // Generar valor especial con 50% de probabilidad por encima del rango
+                if (Math.random() < 0.5) {
+                    // Valor por encima del rango normal
+                    const extendedMax = Math.min(Math.floor(max * 1.5), max + 10);
+                    return Math.floor(Math.random() * (extendedMax - max)) + max;
+                } else {
+                    // Valor específico muy usado en operaciones
+                    const specialValues = [1, 2, 5, 10, 25];
+                    const validSpecials = specialValues.filter(v => v >= min && v <= max);
+                    if (validSpecials.length > 0) {
+                        return validSpecials[Math.floor(Math.random() * validSpecials.length)];
+                    }
+                }
+            }
+            
+            // Si todas las estrategias fallan, volvemos al método simple
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+        
+        // FUNCIÓN MEJORADA: Crear una pirámide de sumas con mayor variedad
+        function createSumPyramid() {
+            // Inicializar estructuras
+            solutionGrid = [];
             for (let i = 0; i < currentSize; i++) {
                 const fila = [];
                 for (let j = 0; j <= i; j++) {
                     fila.push(null);
                 }
-                pyramidGrid.push(fila);
-                solutionGrid.push([...fila]);
+                solutionGrid.push(fila);
             }
             
-            // Llenar la fila base con números aleatorios (1-9)
+            // Llenar la fila base con números ajustados a la dificultad
             const baseRow = currentSize - 1;
+            const difficulty = document.getElementById('difficulty').value;
+            
+            // Definir rangos de números según dificultad
+            let min, max;
+            let negativeProb = 0; // Probabilidad de número negativo
+            
+            if (difficulty === 'easy') {
+                min = 1; max = 12;
+                negativeProb = 0.05; // 5% de probabilidad
+            } else if (difficulty === 'medium') {
+                min = 2; max = 18;
+                negativeProb = 0.15; // 15% de probabilidad
+            } else { // difficulty === 'hard'
+                min = 2; max = 25;
+                negativeProb = 0.25; // 25% de probabilidad
+            }
+            
+            // Contar unos para limitarlos
+            let onesCount = 0;
+            const maxOnes = (difficulty === 'easy') ? 3 : (difficulty === 'medium' ? 2 : 1);
+            
+            // Llenar la base con valores aleatorios y más variados
             for (let j = 0; j <= baseRow; j++) {
-                const randomNum = Math.floor(Math.random() * 9) + 1; // 1-9
+                let randomNum;
+                
+                // Distribución más variada de números
+                if (onesCount < maxOnes && Math.random() < 0.12) { // 12% probabilidad para 1
+                    randomNum = 1;
+                    onesCount++;
+                } else {
+                    randomNum = getRandomDiverseNumber(min, max);
+                    
+                    // Generar número negativo con cierta probabilidad
+                    if (difficulty !== 'easy' && Math.random() < negativeProb) {
+                        randomNum = -randomNum;
+                    }
+                }
+                
                 solutionGrid[baseRow][j] = randomNum;
             }
             
             // Calcular valores para el resto de la pirámide (de abajo hacia arriba)
             for (let i = baseRow - 1; i >= 0; i--) {
                 for (let j = 0; j <= i; j++) {
-                    if (currentMode === 'sum') {
-                        // Suma de los dos valores de abajo
-                        solutionGrid[i][j] = solutionGrid[i+1][j] + solutionGrid[i+1][j+1];
-                    } else {
-                        // Producto de los dos valores de abajo
-                        solutionGrid[i][j] = solutionGrid[i+1][j] * solutionGrid[i+1][j+1];
+                    // Suma de los dos valores de abajo
+                    solutionGrid[i][j] = solutionGrid[i+1][j] + solutionGrid[i+1][j+1];
+                }
+            }
+            
+            // Verificar que no hay valores demasiado grandes o pequeños
+            const maxLimit = getMaxValueLimit();
+            for (let i = 0; i < currentSize; i++) {
+                for (let j = 0; j <= i; j++) {
+                    if (Math.abs(solutionGrid[i][j]) > maxLimit) {
+                        // Si algún valor excede el límite, indicar que debe regenerarse
+                        return false;
                     }
                 }
             }
             
-            // Copiar la solución a la grilla de juego (luego ocultaremos algunas celdas)
-            pyramidGrid = JSON.parse(JSON.stringify(solutionGrid));
+            return true; // Pirámide creada con éxito
         }
         
-        // Ocultar celdas según la dificultad
-        function hideCells() {
-            const difficulty = document.getElementById('difficulty').value;
-            const hidePercentage = difficulties[difficulty];
-            
-            // Contar el número total de celdas en la pirámide
-            let totalCells = 0;
+        // FUNCIÓN COMPLETAMENTE REIMPLEMENTADA: Crear pirámide de productos con mayor variedad
+        function createProductPyramid() {
+            // Inicializar estructuras
+            solutionGrid = [];
             for (let i = 0; i < currentSize; i++) {
-                totalCells += (i + 1);
+                const fila = [];
+                for (let j = 0; j <= i; j++) {
+                    fila.push(null);
+                }
+                solutionGrid.push(fila);
             }
             
-            // Calcular cuántas celdas ocultar
-            const cellsToHide = Math.floor(totalCells * hidePercentage);
+            const baseRow = currentSize - 1;
+            const difficulty = document.getElementById('difficulty').value;
             
-            // Crear una lista de todas las posiciones disponibles (excepto la cima)
+            // Definir rangos y distribución según dificultad
+            let maxValue;
+            let numberDistribution; // Array de posibles valores con diferentes frecuencias
+            
+            if (difficulty === 'easy') {
+                maxValue = 8;
+                // En cada array hay valores repetidos para aumentar su probabilidad
+                numberDistribution = [
+                    1, 1, 1,                          // 1s - probabilidad limitada
+                    2, 2, 2, 2,                       // 2s - alta probabilidad
+                    3, 3, 3, 3,                       // 3s - alta probabilidad
+                    4, 4, 4,                          // 4s - probabilidad media
+                    5, 5, 5,                          // 5s - probabilidad media
+                    6, 6,                             // 6s - probabilidad baja
+                    7, 8                              // 7s y 8s - probabilidad muy baja
+                ];
+            } else if (difficulty === 'medium') {
+                maxValue = 12;
+                numberDistribution = [
+                    1, 1,                             // 1s - probabilidad baja
+                    2, 2, 2, 2,                       // 2s - alta probabilidad
+                    3, 3, 3, 3,                       // 3s - alta probabilidad
+                    4, 4, 4,                          // 4s - probabilidad media
+                    5, 5, 5,                          // 5s - probabilidad media
+                    6, 6, 6,                          // 6s - probabilidad media
+                    7, 7,                             // 7s - probabilidad baja
+                    8, 9,                             // 8s y 9s - probabilidad muy baja
+                    10, 11, 12                        // valores grandes - probabilidad muy baja
+                ];
+            } else { // difficulty === 'hard'
+                maxValue = 15;
+                numberDistribution = [
+                    1,                                // 1s - probabilidad muy baja
+                    2, 2, 2,                          // 2s - probabilidad media
+                    3, 3, 3,                          // 3s - probabilidad media
+                    4, 4, 4,                          // 4s - probabilidad media
+                    5, 5, 5,                          // 5s - probabilidad media
+                    6, 6, 6,                          // 6s - probabilidad media
+                    7, 7, 7,                          // 7s - probabilidad media
+                    8, 8,                             // 8s - probabilidad baja
+                    9, 9,                             // 9s - probabilidad baja
+                    10, 11, 12, 13, 14, 15            // valores grandes - igual probabilidad
+                ];
+            }
+            
+            // Array para rastrear distribución de la base
+            const baseValues = [];
+            const usedPositions = new Set(); // Evitar ciertos patrones
+            
+            // Generar la base con valores diversos
+            for (let j = 0; j <= baseRow; j++) {
+                // Elegir un valor al azar de la distribución
+                const randomIndex = Math.floor(Math.random() * numberDistribution.length);
+                const value = numberDistribution[randomIndex];
+                solutionGrid[baseRow][j] = value;
+                baseValues.push(value);
+            }
+            
+            // Verificar que no tengamos más de 3 valores consecutivos iguales
+            for (let j = 0; j < baseRow - 2; j++) {
+                if (baseValues[j] === baseValues[j+1] && 
+                    baseValues[j] === baseValues[j+2]) {
+                    // Si tenemos 3 valores iguales consecutivos, cambiamos el del medio
+                    const newValue = getRandomDiverseNumber(1, maxValue, true);
+                    if (newValue !== baseValues[j]) {
+                        solutionGrid[baseRow][j+1] = newValue;
+                        baseValues[j+1] = newValue;
+                    }
+                }
+            }
+            
+            // Garantizar al menos algunos números primos y compuestos
+            // para evitar solo potencias de 2
+            let hasPrime = false;
+            let hasNonTwo = false;
+            
+            for (let j = 0; j <= baseRow; j++) {
+                const value = solutionGrid[baseRow][j];
+                if (primeNumbers.includes(value) && value > 2) {
+                    hasPrime = true;
+                }
+                if (value !== 1 && value !== 2 && value !== 4 && value !== 8) {
+                    hasNonTwo = true;
+                }
+            }
+            
+            // Añadir un número primo si no hay ninguno
+            if (!hasPrime && baseRow >= 3) {
+                const pos = Math.floor(Math.random() * (baseRow + 1));
+                const prime = primeNumbers[Math.floor(Math.random() * (primeNumbers.length - 1)) + 1]; // 3, 5, 7, 11...
+                solutionGrid[baseRow][pos] = prime;
+                baseValues[pos] = prime;
+            }
+            
+            // Añadir un número que no sea potencia de 2 si no hay ninguno
+            if (!hasNonTwo && baseRow >= 3) {
+                const pos = Math.floor(Math.random() * (baseRow + 1));
+                const nonTwoPower = [3, 5, 6, 9, 10][Math.floor(Math.random() * 5)];
+                // Evitar sobreescribir el número primo que acabamos de añadir
+                if (solutionGrid[baseRow][pos] !== 3 && solutionGrid[baseRow][pos] !== 5) {
+                    solutionGrid[baseRow][pos] = nonTwoPower;
+                    baseValues[pos] = nonTwoPower;
+                }
+            }
+            
+            // Asegurar que hay algunos unos para controlar el crecimiento de los valores
+            let onesCount = baseValues.filter(v => v === 1).length;
+            const minOnes = difficulty === 'easy' ? 2 : (difficulty === 'medium' ? 1 : 1);
+            
+            if (onesCount < minOnes && baseRow >= 3) {
+                for (let i = 0; i < minOnes - onesCount; i++) {
+                    // Encontrar posición que no tenga un 1
+                    let pos;
+                    do {
+                        pos = Math.floor(Math.random() * (baseRow + 1));
+                    } while (solutionGrid[baseRow][pos] === 1);
+                    
+                    solutionGrid[baseRow][pos] = 1;
+                    baseValues[pos] = 1;
+                }
+            }
+            
+            // Calcular valores para el resto de la pirámide (de abajo hacia arriba)
+            for (let i = baseRow - 1; i >= 0; i--) {
+                for (let j = 0; j <= i; j++) {
+                    // Producto de los dos valores de abajo
+                    solutionGrid[i][j] = solutionGrid[i+1][j] * solutionGrid[i+1][j+1];
+                }
+            }
+            
+            // Verificar si los valores son razonables
+            const maxLimit = getMaxValueLimit();
+            for (let i = 0; i < currentSize; i++) {
+                for (let j = 0; j <= i; j++) {
+                    if (Math.abs(solutionGrid[i][j]) > maxLimit) {
+                        // Si algún valor excede el límite, indicar que debe regenerarse
+                        return false;
+                    }
+                }
+            }
+            
+            // Verificar la variedad (no queremos solo potencias de 2)
+            const allValues = solutionGrid.flat().filter(Boolean); // Todos los valores de la pirámide
+            const nonPowerOfTwo = allValues.filter(v => !isPowerOfTwo(v));
+            
+            // Si menos del 40% de valores no son potencia de 2, rechazamos la pirámide
+            if (nonPowerOfTwo.length < allValues.length * 0.4) {
+                if (debugMode) console.log("Rechazando pirámide con demasiadas potencias de 2");
+                return false;
+            }
+            
+            return true; // Pirámide creada con éxito
+        }
+        
+        // Verificar si un número es potencia de 2
+        function isPowerOfTwo(n) {
+            if (n <= 0) return false;
+            return (n & (n - 1)) === 0;
+        }
+        
+        // FUNCIÓN MEJORADA: Respaldo para suma
+        function createSimpleSumPyramid() {
+            // Inicializar estructuras
+            solutionGrid = [];
+            for (let i = 0; i < currentSize; i++) {
+                const fila = [];
+                for (let j = 0; j <= i; j++) {
+                    fila.push(null);
+                }
+                solutionGrid.push(fila);
+            }
+            
+            const baseRow = currentSize - 1;
+            const difficulty = document.getElementById('difficulty').value;
+            
+            // Valores diversificados incluso en el modo de respaldo
+            const values = difficulty === 'easy' ? [1, 2, 3, 4, 5] : 
+                         (difficulty === 'medium' ? [2, 3, 5, 7, 10] : 
+                                               [3, 5, 8, 10, 15]);
+            
+            // Base con valores variados pero seguros
+            for (let j = 0; j <= baseRow; j++) {
+                solutionGrid[baseRow][j] = values[Math.floor(Math.random() * values.length)];
+                
+                // Añadir algunos negativos en nivel difícil
+                if (difficulty === 'hard' && Math.random() < 0.2) {
+                    solutionGrid[baseRow][j] *= -1;
+                }
+            }
+            
+            // Calcular sumas
+            for (let i = baseRow - 1; i >= 0; i--) {
+                for (let j = 0; j <= i; j++) {
+                    solutionGrid[i][j] = solutionGrid[i+1][j] + solutionGrid[i+1][j+1];
+                }
+            }
+        }
+        
+        // FUNCIÓN MEJORADA: Respaldo para producto
+        function createSimpleProductPyramid() {
+            // Inicializar estructuras
+            solutionGrid = [];
+            for (let i = 0; i < currentSize; i++) {
+                const fila = [];
+                for (let j = 0; j <= i; j++) {
+                    fila.push(null);
+                }
+                solutionGrid.push(fila);
+            }
+            
+            const baseRow = currentSize - 1;
+            const difficulty = document.getElementById('difficulty').value;
+            
+            // Arrays de posibles valores para asegurar diversidad
+            const possibleValues = [
+                [1, 1, 2, 2, 3, 3, 4, 5],          // Fácil
+                [1, 2, 2, 3, 3, 4, 5, 6, 7],       // Medio
+                [1, 2, 3, 3, 4, 5, 6, 7, 8, 9]     // Difícil
+            ];
+            
+            let valueSet;
+            if (difficulty === 'easy') {
+                valueSet = possibleValues[0];
+            } else if (difficulty === 'medium') {
+                valueSet = possibleValues[1];
+            } else { // difficulty === 'hard'
+                valueSet = possibleValues[2];
+            }
+            
+            // Generar base con valores aleatorios del conjunto apropiado
+            let includesPrime = false;
+            for (let j = 0; j <= baseRow; j++) {
+                const value = valueSet[Math.floor(Math.random() * valueSet.length)];
+                solutionGrid[baseRow][j] = value;
+                
+                // Verificar si hemos incluido algún número primo > 2
+                if (primeNumbers.includes(value) && value > 2) {
+                    includesPrime = true;
+                }
+            }
+            
+            // Garantizar al menos un número primo > 2 para evitar solo potencias de 2
+            if (!includesPrime && baseRow >= 3) {
+                const primePos = Math.floor(Math.random() * (baseRow + 1));
+                const primeValue = [3, 5, 7][Math.floor(Math.random() * 3)];
+                solutionGrid[baseRow][primePos] = primeValue;
+            }
+            
+            // Calcular productos
+            for (let i = baseRow - 1; i >= 0; i--) {
+                for (let j = 0; j <= i; j++) {
+                    solutionGrid[i][j] = solutionGrid[i+1][j] * solutionGrid[i+1][j+1];
+                }
+            }
+        }
+        
+        // FUNCIÓN MEJORADA: Ocultar celdas de forma estratégica
+        function hideCells() {
+            const difficulty = document.getElementById('difficulty').value;
+            
+            // Definir el porcentaje de celdas a ocultar según dificultad
+            // Los porcentajes son aproximados debido a la verificación de resolvabilidad
+            let hidePercentage;
+            
+            if (difficulty === 'easy') {
+                // Fácil: oculta entre el 50-60% de las celdas
+                hidePercentage = 0.55;
+            } else if (difficulty === 'medium') {
+                // Medio: oculta entre el 65-75% de las celdas
+                hidePercentage = 0.7;
+            } else { // difficulty === 'hard'
+                // Difícil: oculta entre el 75-90% de las celdas
+                hidePercentage = 0.85;
+            }
+            
+            const totalCells = getNumberOfCells();
+            const maxCellsToHide = Math.floor(totalCells * hidePercentage);
+            
+            // Lista de posiciones a considerar (excluimos la cima)
             const positions = [];
             for (let i = 0; i < currentSize; i++) {
                 for (let j = 0; j <= i; j++) {
-                    // No incluir la cima para siempre mostrarla
-                    if (!(i === 0 && j === 0)) {
+                    // Excluir la cima siempre
+                    if (i !== 0 || j !== 0) {
                         positions.push([i, j]);
                     }
                 }
             }
             
-            // Mezclar las posiciones
+            // Mezclar las posiciones para mayor aleatoriedad
             shuffleArray(positions);
             
-            // Ocultar celdas
-            for (let i = 0; i < cellsToHide && i < positions.length; i++) {
-                const pos = positions[i];
-                const row = pos[0];
-                const col = pos[1];
-                pyramidGrid[row][col] = null;
+            // Hacer una copia de la pirámide completa para pruebas
+            const originalGrid = JSON.parse(JSON.stringify(solutionGrid));
+            
+            // Método mejorado: inicialmente no ocultamos nada
+            pyramidGrid = JSON.parse(JSON.stringify(originalGrid));
+            
+            // Asegurar que la fila de la base tenga algunos valores visibles según dificultad
+            const baseRow = currentSize - 1;
+            let minBaseVisible;
+            
+            if (difficulty === 'easy') {
+                minBaseVisible = Math.ceil((baseRow + 1) * 0.4); // 40% de la base visible mínimo
+            } else if (difficulty === 'medium') {
+                minBaseVisible = Math.ceil((baseRow + 1) * 0.25); // 25% de la base visible mínimo
+            } else { // difficulty === 'hard'
+                minBaseVisible = Math.ceil((baseRow + 1) * 0.15); // 15% de la base visible mínimo
             }
             
-            // Asegurarse de que la cima siempre esté visible (como ayuda)
-            pyramidGrid[0][0] = solutionGrid[0][0];
+            // Asegurar que la fila de la base esté principalmente visible
+            let hiddenCount = 0;
+            let baseCellsHidden = 0;
+            
+            // Limitar intentos para evitar bucles infinitos
+            let maxAttempts = 200; 
+            let attempts = 0;
+            
+            // Procesar cada posición en orden
+            for (const [row, col] of positions) {
+                // Evitar bucles infinitos
+                if (attempts >= maxAttempts || hiddenCount >= maxCellsToHide) break;
+                attempts++;
+                
+                // Proteger la fila base según dificultad
+                if (row === baseRow) {
+                    if (baseCellsHidden >= baseRow + 1 - minBaseVisible) {
+                        continue; // No ocultar más celdas de la base
+                    }
+                }
+                
+                // Intentar ocultar esta celda
+                const originalValue = pyramidGrid[row][col];
+                pyramidGrid[row][col] = null;
+                
+                // Verificar si sigue siendo resoluble
+                let canSolve = true;
+                try {
+                    canSolve = isResolvable();
+                } catch (e) {
+                    canSolve = false;
+                }
+                
+                // Si no se puede resolver, revertir
+                if (!canSolve) {
+                    pyramidGrid[row][col] = originalValue;
+                } else {
+                    // Podemos ocultar esta celda
+                    hiddenCount++;
+                    if (row === baseRow) {
+                        baseCellsHidden++;
+                    }
+                }
+            }
+            
+            // Asegurar que la cima esté visible
+            pyramidGrid[0][0] = originalGrid[0][0];
+        }
+        
+        // Obtener el número total de celdas en la pirámide
+        function getNumberOfCells() {
+            let count = 0;
+            for (let i = 0; i < currentSize; i++) {
+                count += i + 1;
+            }
+            return count;
+        }
+        
+        // Verificar si la pirámide tiene solución única
+        function isResolvable() {
+            // Crear una copia de trabajo
+            const workingGrid = JSON.parse(JSON.stringify(pyramidGrid));
+            
+            // Intentar resolver iterativamente
+            let progress = true;
+            let iterationCount = 0;
+            const maxIterations = 100; // Limitar iteraciones para evitar bucles infinitos
+            
+            while (progress && iterationCount < maxIterations) {
+                progress = false;
+                iterationCount++;
+                
+                // Para cada celda
+                for (let i = 0; i < currentSize; i++) {
+                    for (let j = 0; j <= i; j++) {
+                        // Si la celda ya está resuelta, continuar
+                        if (workingGrid[i][j] !== null) continue;
+                        
+                        // Intentar deducir el valor
+                        let possibleValue = null;
+                        
+                        // Si tiene dos celdas debajo conocidas
+                        if (i < currentSize - 1 && workingGrid[i+1][j] !== null && workingGrid[i+1][j+1] !== null) {
+                            if (currentMode === 'sum') {
+                                possibleValue = workingGrid[i+1][j] + workingGrid[i+1][j+1];
+                            } else {
+                                possibleValue = workingGrid[i+1][j] * workingGrid[i+1][j+1];
+                            }
+                            
+                            workingGrid[i][j] = possibleValue;
+                            progress = true;
+                        }
+                        // Si tiene la celda arriba y una a la derecha conocidas
+                        else if (i > 0 && j < i && workingGrid[i-1][j] !== null && workingGrid[i][j+1] !== null) {
+                            if (currentMode === 'sum') {
+                                possibleValue = workingGrid[i-1][j] - workingGrid[i][j+1];
+                            } else if (workingGrid[i][j+1] !== 0) { // Evitar división por cero
+                                possibleValue = workingGrid[i-1][j] / workingGrid[i][j+1];
+                                
+                                // Verificar si la división es exacta
+                                if (possibleValue !== Math.floor(possibleValue)) {
+                                    continue;
+                                }
+                            }
+                            
+                            workingGrid[i][j] = possibleValue;
+                            progress = true;
+                        }
+                        // Si tiene la celda arriba y una a la izquierda conocidas
+                        else if (i > 0 && j > 0 && workingGrid[i-1][j-1] !== null && workingGrid[i][j-1] !== null) {
+                            if (currentMode === 'sum') {
+                                possibleValue = workingGrid[i-1][j-1] - workingGrid[i][j-1];
+                            } else if (workingGrid[i][j-1] !== 0) { // Evitar división por cero
+                                possibleValue = workingGrid[i-1][j-1] / workingGrid[i][j-1];
+                                
+                                // Verificar si la división es exacta
+                                if (possibleValue !== Math.floor(possibleValue)) {
+                                    continue;
+                                }
+                            }
+                            
+                            workingGrid[i][j] = possibleValue;
+                            progress = true;
+                        }
+                    }
+                }
+            }
+            
+            // Si alcanzamos el límite de iteraciones, consideramos que no es resoluble
+            if (iterationCount >= maxIterations) {
+                return false;
+            }
+            
+            // Verificar si todas las celdas se han resuelto
+            for (let i = 0; i < currentSize; i++) {
+                for (let j = 0; j <= i; j++) {
+                    if (workingGrid[i][j] === null) {
+                        return false;
+                    }
+                    
+                    // Verificar que coincide con la solución original
+                    if (workingGrid[i][j] !== solutionGrid[i][j]) {
+                        return false;
+                    }
+                }
+            }
+            
+            return true;
         }
         
         // Renderizar la pirámide en la página
@@ -807,6 +1544,11 @@
                     if (pyramidGrid[i][j] !== null) {
                         cell.textContent = pyramidGrid[i][j];
                         cell.classList.add('fixed');
+                        
+                        // Añadir clase para números negativos
+                        if (pyramidGrid[i][j] < 0) {
+                            cell.classList.add('negative');
+                        }
                     }
                     
                     // Manejar clic en la celda
@@ -998,7 +1740,7 @@
                 const link = document.createElement('a');
                 
                 // Configurar el nombre del archivo
-                const cleanName = studentName.replace(/\s+/g, '_').replace(/[^\w]/g, '');
+                const cleanName = studentName.replace(/\\s+/g, '_').replace(/[^\\w]/g, '');
                 const dateStr = new Date().toISOString().slice(0,10);
                 link.download = `piramide_${opMode}_${currentSize}n_${cleanName}_${difficultyText}_${dateStr}.png`;
                 
@@ -1062,7 +1804,17 @@
                         
                         // Dibujar número
                         if (pyramidGrid[i][j] !== null) {
-                            context.font = 'bold 18px Arial';
+                            // Ajustar tamaño de fuente según longitud del número
+                            const numStr = pyramidGrid[i][j].toString();
+                            let fontSize = 18;
+                            if (numStr.length > 3) {
+                                fontSize = 16;
+                            }
+                            if (numStr.length > 5) {
+                                fontSize = 14;
+                            }
+                            
+                            context.font = `bold ${fontSize}px Arial`;
                             
                             if (cellElement && cellElement.classList.contains('error')) {
                                 context.fillStyle = '#e74c3c'; // Color texto error
@@ -1070,13 +1822,15 @@
                                 context.fillStyle = '#2c3e50'; // Color texto cima
                             } else if (cellElement && cellElement.classList.contains('fixed')) {
                                 context.fillStyle = '#2c3e50'; // Color texto fijo
+                            } else if (numStr.startsWith('-')) {
+                                context.fillStyle = '#e74c3c'; // Color texto negativo
                             } else {
                                 context.fillStyle = '#333333'; // Color texto normal
                             }
                             
                             context.textAlign = 'center';
                             context.textBaseline = 'middle';
-                            context.fillText(pyramidGrid[i][j], x + cellSize/2, y + cellSize/2);
+                            context.fillText(numStr, x + cellSize/2, y + cellSize/2);
                         }
                         
                         // Dibujar símbolos de operación
